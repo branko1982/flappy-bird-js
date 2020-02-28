@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<head>
+    <title>just some flappy bird game, finally gonna make it ! </title>
+
+    <script type = "text/javascript">
+
+
+        var canvas, canvas_container, ctx, audio_context, sound_source;
+        var score = 0;
+        var game = {status: null};
+        var img = new Image();
+        var sounds = {
+            "sfx_die.wav": null,
+            "sfx_hit.wav": null,
+            "sfx_point.wav": null,
+            "sfx_swooshing.wav": null,
+            "sfx_wing.wav": null
+        };
+        var sprites = {
+            birds: {
+                bird1: {
+                    x: 312,
+                    y: 230,
+                    width: 34,
+                    height: 24
+                },
+                bird2: {
+                    x: 312,
+                    y: 256,
+                    width: 34,
+                    height: 24
+                },
+                bird3: {
+                    x: 312,
+                    y: 282,
+                    width: 34,
+                    height: 24
+                }
+            },
+            background: {
+                background1: {
+                    x: 276,
+                    y: 0,
+                    width: 224,
+                    height: 112
+                },
+                background2: {
+                    x: 0,
+                    y: 0,
+                    width: 276,
+                    height: 228
+                }
+            },
+            instructions: {
+                x: 0,
+                y: 228,
+                width: 116,
+                height: 98
+            },
+            game_title: {
+                x: 119,
+                y: 229,
+                width: 192,
+                height: 44
+            },
+            gameover_title: {
+                x: 118,
+                y: 272,
+                width: 188,
+                height: 38
+            },
+            getready_title: {
+                x: 118,
+                y: 310,
+                width: 174,
+                height: 44
+            },
+            up_pipe: {
+                x: 503,
+                y: 0,
+                width: 52,
+                height: 400
+            },
+            down_pipe: {
+                x: 556,
+                y: 0,
+                width: 52,
+                height: 400
+            },
+            number_0: {
+                x: 0,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_1: {
+                x: 20,
+                y: 376,
+                width: 10,
+                height: 20
+            },
+            number_2: {
+                x: 32,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_3: {
+                x: 48,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_4: {
+                x: 64,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_5: {
+                x: 80,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_6: {
+                x: 96,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_7: {
+                x: 112,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_8: {
+                x: 128,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            number_9: {
+                x: 144,
+                y: 376,
+                width: 14,
+                height: 20
+            },
+            pause_game: {
+                x: 398,
+                y: 354,
+                width: 26,
+                height: 26
+            },
+            run_game: {
+                x: 398,
+                y: 382,
+                width: 26,
+                height: 26
+            },
+        };
+
+        var game_controls = {
+            drawGameRunPauseControls: function () {
+                switch (game.status)
+                {
+                    case "running":
+                        ctx.drawImage(img, sprites.pause_game.x, sprites.pause_game.y, sprites.pause_game.width, sprites.pause_game.height, canvas.width - 26, 0, sprites.pause_game.width, sprites.pause_game.height);
+                        break;
+                    case "paused":
+                        ctx.drawImage(img, sprites.run_game.x, sprites.run_game.y, sprites.run_game.width, sprites.run_game.height, canvas.width - 26, 0, sprites.run_game.width, sprites.run_game.height);
+                        break;
+                }
+            },
+            updateGameRunPauseControls: function ()
+            {
+                console.log("controls have been udpated");
+            }
+        };
+        var world = {
+            iretation: 0,
+            position_shift: 0,
+            clear: function () {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            },
+            update_moving_background: function () {
+                this.position_shift = this.position_shift + 1.5;
+                if (world.iretation % 250 === 0)
+                {
+                    this.position_shift = 0;
+                }
+            },
+            draw_moving_background: function ()
+            {
+                ctx.drawImage(img, sprites.background.background1.x, sprites.background.background1.y, sprites.background.background1.width, sprites.background.background1.height, 0 - this.position_shift, canvas.height - sprites.background.background1.height, sprites.background.background1.width, sprites.background.background1.height);
+                ctx.drawImage(img, sprites.background.background1.x, sprites.background.background1.y, sprites.background.background1.width, sprites.background.background1.height, sprites.background.background1.width - this.position_shift, canvas.height - sprites.background.background1.height, sprites.background.background1.width, sprites.background.background1.height);
+                ctx.drawImage(img, sprites.background.background1.x, sprites.background.background1.y, sprites.background.background1.width, sprites.background.background1.height, 2 * sprites.background.background1.width - this.position_shift, canvas.height - sprites.background.background1.height, sprites.background.background1.width, sprites.background.background1.height);
+                ctx.drawImage(img, sprites.background.background1.x, sprites.background.background1.y, sprites.background.background1.width, sprites.background.background1.height, 3 * sprites.background.background1.width - this.position_shift, canvas.height - sprites.background.background1.height, sprites.background.background1.width, sprites.background.background1.height);
+            },
+            draw_static_background: function ()
+            {
+                ctx.drawImage(img, sprites.background.background2.x, sprites.background.background2.y, sprites.background.background2.width, sprites.background.background2.height, 0, 0, canvas.width, canvas.height - sprites.background.background1.height);
+            },
+            draw_instructions: function ()
+            {
+                ctx.drawImage(img, sprites.instructions.x, sprites.instructions.y, sprites.instructions.width, sprites.instructions.height, canvas.width / 2 - sprites.instructions.width / 2, 150, sprites.instructions.width, sprites.instructions.height);
+            },
+            draw_game_title: function () {
+                ctx.drawImage(img, sprites.game_title.x, sprites.game_title.y, sprites.game_title.width, sprites.game_title.height, canvas.width / 2 - sprites.game_title.width / 2, 50, sprites.game_title.width, sprites.game_title.height);
+            },
+            draw_gameover_title: function () {
+                ctx.drawImage(img, sprites.gameover_title.x, sprites.gameover_title.y, sprites.gameover_title.width, sprites.gameover_title.height, canvas.width / 2 - sprites.gameover_title.width / 2, 50, sprites.gameover_title.width, sprites.gameover_title.height);
+            },
+            draw_getready_title: function ()
+            {
+                ctx.drawImage(img, sprites.getready_title.x, sprites.getready_title.y, sprites.getready_title.width, sprites.getready_title.height, canvas.width / 2 - sprites.getready_title.width / 2, 100, sprites.getready_title.width, sprites.getready_title.height);
+            },
+            draw_score: function () {
+                var actual_number;
+                // musím rozdeliť čísla na jednotlivé číslice a tie uložiť do poľa do poľa, ešte predtým dať číslo do stringu
+                switch (score.toString().length)
+                {
+                    case 1:
+                        actual_number = Array.from(score.toString())[0].toString();
+                        ctx.drawImage(img, eval("sprites.number_" + actual_number + ".x"), eval("sprites.number_" + actual_number + ".y"), eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"), canvas.width / 2 - eval("sprites.number_" + actual_number + ".width") / 2, 30, eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"));
+                        break;
+                    case 2:
+                        actual_number = Array.from(score.toString())[0].toString();
+                        ctx.drawImage(img, eval("sprites.number_" + actual_number + ".x"), eval("sprites.number_" + actual_number + ".y"), eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"), canvas.width / 2 - eval("sprites.number_" + actual_number + ".width") / 2 - 7, 30, eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"));
+                        actual_number = Array.from(score.toString())[1].toString();
+                        ctx.drawImage(img, eval("sprites.number_" + actual_number + ".x"), eval("sprites.number_" + actual_number + ".y"), eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"), canvas.width / 2 - eval("sprites.number_" + actual_number + ".width") / 2 + 7, 30, eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"));
+                        break;
+                    case 3:
+                        actual_number = Array.from(score.toString())[0].toString();
+                        ctx.drawImage(img, eval("sprites.number_" + actual_number + ".x"), eval("sprites.number_" + actual_number + ".y"), eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"), canvas.width / 2 - eval("sprites.number_" + actual_number + ".width") / 2 - 14, 30, eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"));
+                        actual_number = Array.from(score.toString())[1].toString();
+                        ctx.drawImage(img, eval("sprites.number_" + actual_number + ".x"), eval("sprites.number_" + actual_number + ".y"), eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"), canvas.width / 2 - eval("sprites.number_" + actual_number + ".width") / 2, 30, eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"));
+                        actual_number = Array.from(score.toString())[2].toString();
+                        ctx.drawImage(img, eval("sprites.number_" + actual_number + ".x"), eval("sprites.number_" + actual_number + ".y"), eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"), canvas.width / 2 - eval("sprites.number_" + actual_number + ".width") / 2 + 14, 30, eval("sprites.number_" + actual_number + ".width"), eval("sprites.number_" + actual_number + ".height"));
+                        break;
+                }
+            },
+            update_score: function () {
+                for (var z = 0; z < pipes.pipes_list.length; z++)
+                {
+                    if (pipes.pipes_list[z].x + sprites.up_pipe.width < bird.x && !pipes.pipes_list[z].passed)
+                    {
+                        pipes.pipes_list[z].passed = true;
+                        score++;
+                    }
+                }
+            }
+        };
+        var bird = {
+            x: 50,
+            y: 150,
+            frame: 0,
+            counter: 0,
+            jump: 30,
+            status: "normal",
+            velocity: 0.4,
+            additional_height: 0,
+            fall_speed: 0,
+            bird_jump_loop: 0,
+            rotation: 0,
+            crash: null,
+            angle: 0,
+            update: function () {
+
+                if (game.status !== "game_over") {
+                    this.counter++;
+                    if (world.iretation % 7 === 0) {
+                        if (this.frame === 2)
+                        {
+                            this.frame = 0;
+                        } else {
+
+                            this.frame++;
+                        }
+                    }
+                }
+
+
+                switch (game.status) {
+                    case "waiting_for_start":
+                        if (world.iretation % 2 === 0)
+                        {
+                            this.y = canvas.height - 330 + 5 * Math.cos(world.iretation / 10);
+                        }
+                        break;
+                    case "running":
+                        if (this.y > canvas.height - (sprites.background.background1.height + sprites.birds.bird1.height) && game.status !== "game_over")
+                        {
+                            game.status = "game_over";
+                            this.status = "crashed";
+                            this.fall_speed = 0;
+                            this.crash = "fell_on_the_ground";
+                            play_sound("sfx_hit.wav");
+                        }
+                        pipes.pipes_list.forEach(function (single_entry, index, array) {
+                            if (bird.x + sprites.birds.bird1.width >= single_entry.x && bird.x + sprites.birds.bird1.width <= single_entry.x + sprites.up_pipe.width) {
+                                if ((bird.y < (-150 - ((canvas.height - sprites.background.background1.height) - single_entry.y)) + sprites.down_pipe.height) || (bird.y + sprites.birds.bird1.height >= single_entry.y))
+                                {
+                                    game.status = "game_over";
+                                    bird.status = "crashed";
+                                    bird.crash = "collision_with_obstacle";
+                                    play_sound("sfx_hit.wav");
+                                    setTimeout(play_sound("sfx_die.wav"), 400);
+
+
+
+                                }
+                            }
+                        });
+                        switch (this.status) {
+                            case "normal":
+                                if (this.counter % 5 === 0)
+                                {
+                                    this.fall_speed += 0.25;
+                                }
+                                this.y = this.y + this.fall_speed;
+                                if (this.angle !== 90 && this.angle < 450 && this.fall_speed > 2.3)
+                                {
+                                    this.angle += 5;
+                                }
+                                break;
+                            case "jump":
+                                if (this.bird_jump_loop < 10)
+                                {
+                                    if (this.angle > -20)
+                                    {
+                                        this.angle -= 14;
+                                    }
+                                    if (bird.y >= sprites.birds.bird1.height / 2)
+                                    {
+                                        this.bird_jump_loop++;
+                                        this.y -= 4;
+                                    } else
+                                    {
+                                        this.status = "normal";
+                                        this.fall_speed = 0;
+                                        this.bird_jump_loop = 0;
+                                    }
+                                } else {
+                                    this.status = "normal";
+                                    this.fall_speed = 0;
+                                    this.bird_jump_loop = 0;
+                                }
+
+                                break;
+                        }
+
+                        break;
+                    case "game_over":
+
+                        if (this.angle !== 90 && this.crash == "collision_with_obstacle" && this.angle < 450)
+                        {
+                            this.angle += 7;
+                        }
+                        if (this.y + sprites.birds.bird1.height < canvas.height - sprites.background.background1.height && world.iretation % 2 === 0)
+                        {
+                            this.fall_speed += 0.4;
+                            this.y = this.y + this.fall_speed;
+                        }
+                        break;
+                }
+
+
+            },
+            draw: function () {
+                this.rotation = this.angle * (Math.PI / 180);
+                switch (this.frame) {
+                    case 0:
+                        ctx.save();
+                        ctx.translate(this.x, this.y);
+                        ctx.rotate(this.rotation);
+                        ctx.drawImage(img, sprites.birds.bird1.x, sprites.birds.bird1.y, sprites.birds.bird1.width, sprites.birds.bird1.height, 0, 0, sprites.birds.bird1.width, sprites.birds.bird1.height);
+                        ctx.restore();
+                        break;
+                    case 1:
+                        ctx.save();
+                        ctx.translate(this.x, this.y);
+                        ctx.rotate(this.rotation);
+                        ctx.drawImage(img, sprites.birds.bird2.x, sprites.birds.bird2.y, sprites.birds.bird1.width, sprites.birds.bird2.height, 0, 0, sprites.birds.bird2.width, sprites.birds.bird2.height);
+                        ctx.restore();
+                        break;
+                    case 2:
+                        ctx.save();
+                        ctx.translate(this.x, this.y);
+                        ctx.rotate(this.rotation);
+                        ctx.drawImage(img, sprites.birds.bird3.x, sprites.birds.bird3.y, sprites.birds.bird3.width, sprites.birds.bird3.height, 0, 0, sprites.birds.bird3.width, sprites.birds.bird3.height);
+                        ctx.restore();
+                        break;
+                }
+
+            }
+        };
+        var pipes = {
+            first_pipe: true,
+            pipes_list: [],
+            update: function ()
+            {
+                if (world.iretation % 160 === 0)
+                {
+                    this.pipes_list.push({
+                        x: canvas.width + this.pipes_list.length * 200,
+                        y: Math.round((Math.random() * 300)) + 50,
+                        passed: false
+                    });
+                }
+                this.pipes_list.forEach(function (single_element, index, arr) {
+                    if (single_element.x < -100)
+                    {
+                        arr.splice(index, 1);
+                    }
+                });
+                for (var j = 0; j < this.pipes_list.length; j++)
+                {
+                    this.pipes_list[j].x -= 1.5;
+                }
+            },
+            draw: function ()
+            {
+                for (var z = 0; z < this.pipes_list.length; z++)
+                {
+                    ctx.drawImage(img, sprites.up_pipe.x, sprites.up_pipe.y, sprites.up_pipe.width, sprites.up_pipe.height, this.pipes_list[z].x, this.pipes_list[z].y, sprites.up_pipe.width, sprites.up_pipe.height);
+                    ctx.drawImage(img, sprites.down_pipe.x, sprites.down_pipe.y, sprites.down_pipe.width, sprites.down_pipe.height, this.pipes_list[z].x, -150 - ((canvas.height - sprites.background.background1.height) - this.pipes_list[z].y), sprites.down_pipe.width, sprites.down_pipe.height);
+                }
+            },
+            reset: function ()
+            {
+                this.pipes_array = [];
+            }
+        };
+        img.addEventListener('load', function () {
+            canvas_container = document.createElement("div");
+            canvas_container.id = "canvas_container";
+            canvas_container.style.textAlign = "center";
+            document.body.appendChild(canvas_container);
+            canvas = document.createElement("canvas");
+            canvas.id = "game_canvas";
+            canvas.width = 320;
+            canvas.height = 480;
+            canvas.style.border = "1px solid blue";
+            document.getElementById("canvas_container").appendChild(canvas);
+            ctx = canvas.getContext("2d");
+            function init_game()
+            {
+                initialize_audio_context();
+                game.status = "waiting_for_start";
+                window.requestAnimationFrame(run_game);
+            }
+            function run_game()
+            {
+                if ((game.status == "running") || (game.status == "waiting") || (game.status == "game_over"))
+                {
+                    world.iretation++;
+                }
+                world.clear();
+                update_game_properties();
+                draw_game_properties();
+                window.requestAnimationFrame(run_game);
+                world.iretation++;
+
+
+            }
+            init_game();
+            canvas.addEventListener("click", handleUserInteraction, false);
+            canvas.addEventListener("touchstart", handleUserInteraction, false);
+            function update_game_properties()
+            {
+                switch (game.status)
+                {
+                    case "waiting_for_start":
+                        world.update_moving_background();
+                        bird.update();
+                        break;
+                    case "running":
+                        game_controls.updateGameRunPauseControls();
+                        world.update_moving_background();
+                        bird.update();
+                        pipes.update();
+                        world.update_score();
+                        break;
+                    case "game_over":
+                        bird.update();
+                        break;
+                }
+            }
+            function draw_game_properties()
+            {
+                switch (game.status)
+                {
+                    case "waiting_for_start":
+                        world.draw_moving_background();
+                        world.draw_static_background();
+                        world.draw_instructions();
+                        world.draw_game_title();
+                        world.draw_getready_title();
+                        bird.draw();
+                        break;
+                    case "running":
+                        world.draw_static_background();
+                        pipes.draw();
+                        world.draw_moving_background();
+                        bird.draw();
+                        world.draw_score();
+                        game_controls.drawGameRunPauseControls();
+                        break;
+                    case "game_over":
+                        world.draw_static_background();
+                        pipes.draw();
+                        world.draw_moving_background();
+                        bird.draw();
+                        world.draw_gameover_title();
+                        break;
+
+                    case "paused":
+                        world.draw_static_background();
+                        pipes.draw();
+                        world.draw_moving_background();
+                        bird.draw();
+                        world.draw_score();
+                        game_controls.drawGameRunPauseControls();
+                        break;
+                }
+            }
+
+        }, false);
+        function handleUserInteraction(event) {
+            if (game.status == "waiting_for_start") {
+                game.status = "running";
+                bird.status = "jump";
+                play_sound("sfx_wing.wav");
+                return false;
+            } else if (game.status == "running" || game.status == "paused") {
+                if (event.clientX - this.offsetLeft > canvas.width - sprites.pause_game.width && event.clientX - this.offsetLeft < canvas.width && event.clientY > 0 && event.clientY < 26)
+                {
+                    console.log("clicked");
+                    switch (game.status)
+                    {
+                        case "running":
+                            game.status = "paused";
+                            break;
+                        case "paused":
+                            game.status = "running"
+                            break;
+                    }
+                } else {
+                    bird.status = "jump";
+                    play_sound("sfx_wing.wav");
+
+                    return false;
+                }
+            }
+        }
+        function initialize_audio_context()
+        {
+            try {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audio_context = new AudioContext();
+            } catch (e) {
+                alert('Web Audio API is not supported in this browser');
+            }
+            for (var key in sounds)
+            {
+                if (sounds.hasOwnProperty(key))
+                {
+                    load_sound(key);
+                }
+            }
+        }
+        function load_sound(key)
+        {
+            // Decode asynchronously
+            var request = new XMLHttpRequest();
+            var URL = window.location.origin + "/sounds/" + key;
+            request.open("GET", URL, true);
+            request.responseType = "arraybuffer";
+            request.onload = function () {
+                audio_context.decodeAudioData(request.response, function (buffer) {
+                    sounds[key] = buffer;
+                    console.log("loaded nigga");
+                });
+            }
+            request.send();
+        }
+        function play_sound(key)
+        {
+            console.log("sound played;");
+            sound_source = audio_context.createBufferSource();
+            sound_source.buffer = sounds[key];                   
+            sound_source.connect(audio_context.destination);      
+            sound_source.start(0);
+        }
+        img.src = "sheet.png";
+    </script>
+    <style>
+        *
+        {
+            position: relative;
+            padding: 0px;
+            margin : 0px;
+        }
+        html, body, div
+        {
+            margin: 0 auto;
+        }
+        #canvas_container
+        {
+            width: 100%;
+            height: 1000px;
+        }
+    </style>
+</head>
+<body>
+</body>
+</html>
